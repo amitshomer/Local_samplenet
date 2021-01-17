@@ -123,6 +123,7 @@ def normalize_patch(grouped_xyz, trans_norm=True, scale_norm=True, eps=1e-12):
         patch_mean: (batch_size, npoint, 1, 3) TF tensor, local region mean
         patch_norm: (batch_size, npoint, 1, 1) TF tensor, local region norm
     '''
+    grouped_xyz = grouped_xyz.permute(0,2,1,3)
     patch_mean = torch.mean(grouped_xyz, dim=2, keepdim=True)  # batch_size x npoint x 1 x 3
     if trans_norm:
         shifted_xyz = grouped_xyz - patch_mean
@@ -130,13 +131,15 @@ def normalize_patch(grouped_xyz, trans_norm=True, scale_norm=True, eps=1e-12):
         shifted_xyz = grouped_xyz
 
     point_norm = torch.norm(shifted_xyz, dim =3, keepdim=True)  # batch_size x npoint x nsample x 1
-    patch_norm = torch.max(point_norm, axis=2, keepdim=True)  # B x npoint x 1 x 1
+    patch_norm = torch.max(point_norm, axis=2, keepdim=True)[0]  # B x npoint x 1 x 1
     #patch_norm = torch.max(patch_norm, eps)  # for safe division
 
     if scale_norm:
         normed_xyz = shifted_xyz / patch_norm
     else:
         normed_xyz = shifted_xyz
+
+    normed_xyz = normed_xyz.permute(0,2,1,3)
 
     return normed_xyz, patch_mean, patch_norm
 
