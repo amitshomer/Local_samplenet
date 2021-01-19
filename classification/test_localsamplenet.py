@@ -43,16 +43,16 @@ def parse_args():
     parser.add_argument('--log_dir', type=str, default='pointnet_cls_0908', help='Experiment root')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
     parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores with voting [default: 3]')
-    parser.add_argument("--modelnet", type=float, default=40 ,help="chosie data base for training [default: 40")
+    parser.add_argument("--modelnet", type=float, default=30 ,help="chosie data base for training [default: 40")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
     
     
     parser.add_argument("--seed_maker", type=str, default='FPS', help="FPS/samplenet")
 
 
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=8, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=128, help="Number of sample for each patch [default: 256]")
-    parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
+    parser.add_argument('--seeds_choice', default='Sampleseed', help='FPS/Random/ Sampleseed- TBD')
     return parser.parse_args()
 
 def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=None):
@@ -98,7 +98,7 @@ def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=
             
                 plt.show()
 
-            projected_points, end_points_sampler = classifier.sampler(points)
+            projected_points, end_points_sampler,_ = classifier.sampler(points)
            
             #####
             
@@ -186,7 +186,7 @@ def main(args):
 
         ### model load names###
     clas_tesk_dir= 'log/pointnet_cls_task/'
-    localsample_net_dir= 'log/LocalSamplenet/2021-01-05_20-46/'
+    localsample_net_dir= 'log/LocalSamplenet/2021-01-19_10-09/'
    
    
    
@@ -257,7 +257,7 @@ def main(args):
     classifier.sampler = sampler
 
     
-    checkpoint = torch.load(str(localsample_net_dir) + 'checkpoints/sampler_cls_2609.pth')
+    checkpoint = torch.load(str(localsample_net_dir) + 'checkpoints/localSN.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
 
     sampler.requires_grad_(False)

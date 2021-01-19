@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from tqdm import tqdm
 import sys
-import provider
+#import provider
 import importlib
 import shutil
 from models import pointnet_cls

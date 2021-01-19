@@ -14,6 +14,7 @@ import importlib
 import shutil
 from models import pointnet_cls
 import src.samplenet 
+from src.sampleseed import SampleSeed
 from data.ModelNetDataLoader import ModelNetDataLoader
 from data.modelnet_loader_torch import ModelNetCls
 from src.pctransforms import OnUnitCube, PointcloudToTensor
@@ -41,7 +42,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=32, help='batch size in training [default: 24]')
     parser.add_argument('--model', default='pointnet_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--epoch',  default=400, type=int, help='number of epoch in training [default: 200]')
-    parser.add_argument('--learning_rate', default=0.0006, type=float, help='learning rate in training [default: 0.001]')
+    parser.add_argument('--learning_rate', default=0.004, type=float, help='learning rate in training [default: 0.001]')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device [default: 0]')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
@@ -60,7 +61,7 @@ def parse_args():
 
     parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
     parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
-    parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument('--seeds_choice', default='Sampleseed', help='FPS/Random/ Sampleseed- TBD')
 
     return parser.parse_args()
 
@@ -137,7 +138,7 @@ def main(args):
                                                      normal_channel=args.normal)
     TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, modelnet=args.modelnet, split='test', 
                                                     normal_channel=args.normal)
-    trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4,drop_last=True)
+    trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4,drop_last=True)
     testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4,drop_last=True)
    
     #models loading
@@ -190,7 +191,7 @@ def main(args):
     global_epoch = 0
     global_step = 0
     
-    tb = SummaryWriter(comment=f'LocalSamplenet_T: modelnet= {args.modelnet}: points={args.num_out_points}')
+    tb = SummaryWriter(comment=f'LocalSamplenet_T: modelnet= {args.modelnet}: points={args.num_out_points} n_pactch= {args.num_patchs}: n_spatch= {args.nsample_per_patch}:')
 
     # best_instance_acc = 0.0
     # best_class_acc = 0.0
@@ -236,7 +237,7 @@ def main(args):
             
             # sampler = sampler.train().cuda()
             seed_idx = []
-            projected_points, end_points_sampler = classifier.sampler(points)
+            projected_points, end_points_sampler, spoint_seeds = classifier.sampler(points)
             
             pred, trans_feat = classifier(projected_points.permute(0,2,1))
             
@@ -246,6 +247,8 @@ def main(args):
             simplification_loss = classifier.sampler.get_simplification_loss(batch_patches_normed.permute(0,2,1), batch_patches_normed_simplified.permute(0,2,1), args.num_out_points)
             projection_loss = sampler.get_projection_loss()
             samplenet_loss = args.alpha * simplification_loss + args.lmbda * projection_loss
+
+            sampleseed_loss = classifier.sampler.get_sampleseed_loos(points.permute(0,2,1), spoint_seeds,args.num_patchs)
             # print(projection_loss)
             # samplenet_loss = simplification_loss
             
@@ -253,7 +256,7 @@ def main(args):
 
             task_loss = criterion(pred, target.long(), trans_feat)
 
-            loss = task_loss + samplenet_loss
+            loss = task_loss + samplenet_loss +sampleseed_loss
             
             # + samplenet_loss
 
@@ -273,6 +276,7 @@ def main(args):
             tb.add_scalar('Loss/Samplenet loss ', samplenet_loss, global_step)
             tb.add_scalar('Loss/Simplification loss ', simplification_loss, global_step)
             tb.add_scalar('Loss/Projection_loss loss ', projection_loss, global_step)
+            # tb.add_scalar('Loss/SampleSeed loss  ', sampleseed_loss, global_step)
 
             # plotter.add_values(global_epoch, loss_train=loss, redraw=False)
 
@@ -299,7 +303,7 @@ def main(args):
        
       
 
-        savepath = str(checkpoints_dir) + '/sampler_cls_2609.pth'
+        savepath = str(checkpoints_dir) + '/localSN.pth'
         log_string('Saving at %s'% savepath)
         state = {
                     # 'test instance_acc': instance_acc,

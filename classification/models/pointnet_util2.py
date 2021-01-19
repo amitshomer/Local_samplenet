@@ -5,6 +5,7 @@ from time import time
 import numpy as np
 from knn_cuda import KNN
 from einops import repeat
+from src.sampleseed import SampleSeed 
 
 def timeit(tag, t):
     print("{}: {}s".format(tag, time() - t))
@@ -166,7 +167,7 @@ def denormalize_patch(normed_xyz, patch_mean, patch_norm, trans_norm=True, scale
     return grouped_xyz
 
 
-def sample_and_group(num_in_point, npoint, radius, nsample, xyz, points, bacth_size,knn= False, trans_norm=True, scale_norm=True, returnfps=False,use_xyz=True,global_fetuers=False ,seed_choice = 'FPS'):
+def sample_and_group(num_in_point, npoint, radius, nsample, xyz, points, bacth_size,knn= False, trans_norm=True, scale_norm=True, returnfps=False,use_xyz=True,global_fetuers=False ,seed_choice = 'FPS',sample_seed =None):
     """
     Input:
         npoint:
@@ -186,8 +187,11 @@ def sample_and_group(num_in_point, npoint, radius, nsample, xyz, points, bacth_s
     
     if seed_choice == "Random":
         fps_idx = np.random.randint( num_in_point-1, size=(bacth_size,npoint))
-
-
+    
+    if seed_choice == "Sampleseed" :
+        fps_idx = sample_seed 
+       
+    
     torch.cuda.empty_cache()
     new_xyz = index_points(xyz, fps_idx)
     
@@ -253,7 +257,7 @@ def sample_and_group_all(xyz, points):
 
 
 class PointNetSetAbstraction(nn.Module):
-    def __init__(self, num_in_point, npoint, radius, nsample, in_channel1 ,in_channel2, mlp,mlp2, group_all,knn,trans_norm , scale_norm , use_xyz,use_nchw,global_fetuers,seed_choice,batch_size):
+    def __init__(self, num_in_point,num_output_points, npoint, radius, nsample, in_channel1 ,in_channel2, mlp,mlp2, group_all,knn,trans_norm , scale_norm , use_xyz,use_nchw,global_fetuers,seed_choice,batch_size):
         super(PointNetSetAbstraction, self).__init__()
         self.num_in_point = num_in_point
         self.npoint = npoint
@@ -272,6 +276,18 @@ class PointNetSetAbstraction(nn.Module):
         self.use_xyz = use_xyz
         self.use_nchw = use_nchw
         self.seed_choice = seed_choice
+        
+        if seed_choice =='Sampleseed':
+            self.SampleSeed = SampleSeed(num_out_points=npoint,
+            bottleneck_size=128,
+            group_size=npoint,
+            initial_temperature=1.0,
+            input_shape="bcn",
+            output_shape="bcn",
+            )
+
+     
+        
         last_channel = in_channel1
         last_channel2 = in_channel2
         
@@ -297,6 +313,12 @@ class PointNetSetAbstraction(nn.Module):
             new_xyz: sampled points position data, [B, C, S]
             new_points_concat: sample points feature data, [B, D', S]
         """
+        if self.seed_choice == "Sampleseed":
+            _,spoint_seeds,idx_seeds = self.SampleSeed(xyz)
+        else:
+            idx_seeds = None
+            spoint_seeds = None
+        
         xyz = xyz.permute(0, 2, 1)
         if points is not None:
             points = points.permute(0, 2, 1)
@@ -304,7 +326,7 @@ class PointNetSetAbstraction(nn.Module):
         if self.group_all:
             new_xyz, new_points = sample_and_group_all(xyz, points)#should update
         else:
-            new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm  = sample_and_group(self.num_in_point ,self.npoint, self.radius, self.nsample, xyz, points,self.batch_size, self.knn ,self.trans_norm, self.scale_norm, self.use_xyz ,global_fetuers =self.global_fetuers, seed_choice =self.seed_choice)
+            new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm  = sample_and_group(self.num_in_point ,self.npoint, self.radius, self.nsample, xyz, points,self.batch_size, self.knn ,self.trans_norm, self.scale_norm, self.use_xyz ,global_fetuers =self.global_fetuers, seed_choice =self.seed_choice, sample_seed =idx_seeds)
 
 
         # new_xyz: sampled points position data, [B, npoint, C]g
@@ -343,7 +365,7 @@ class PointNetSetAbstraction(nn.Module):
 
 
         #new_xyz = new_xyz.permute(0, 2, 1)
-        return new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm
+        return new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm, spoint_seeds
 
         
         # new_points,_ = torch.max(new_points, dim= 2, keepdim= True)#
