@@ -53,6 +53,8 @@ def parse_args():
     parser.add_argument("-npatches", "--num-patchs", type=int, default=8, help="Number of patches [default: 4]")
     parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=128, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
+    parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch"
     return parser.parse_args()
 
 def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=None):
@@ -251,7 +253,9 @@ def main(args):
         skip_projection=False,
         npatch = args.num_patchs ,
         nsample_per_patch = args.nsample_per_patch ,
-        seed_choice = args.seeds_choice
+        seed_choice = args.seeds_choice,
+        trans_norm=args.trans_norm, 
+        scale_norm=args.scale_norm
         )
     
     classifier.sampler = sampler

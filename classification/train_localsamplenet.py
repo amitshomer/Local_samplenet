@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=32, help='batch size in training [default: 24]')
     parser.add_argument('--model', default='pointnet_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--epoch',  default=400, type=int, help='number of epoch in training [default: 200]')
-    parser.add_argument('--learning_rate', default=0.0006, type=float, help='learning rate in training [default: 0.001]')
+    parser.add_argument('--learning_rate', default=0.004, type=float, help='learning rate in training [default: 0.001]')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device [default: 0]')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
@@ -58,9 +58,11 @@ def parse_args():
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
     parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 40")
 
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=16, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=64, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
+    parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
 
     return parser.parse_args()
 
@@ -164,7 +166,9 @@ def main(args):
         skip_projection = False,
         npatch = args.num_patchs ,
         nsample_per_patch = args.nsample_per_patch ,
-        seed_choice = args.seeds_choice
+        seed_choice = args.seeds_choice,
+        trans_norm = args.trans_norm, 
+        scale_norm = args.scale_norm
         )
 
     sampler.requires_grad_(True)

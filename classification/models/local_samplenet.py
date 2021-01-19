@@ -42,13 +42,13 @@ class Local_samplenet(nn.Module):
         # self.sa3 = PointNetSetAbstraction(npoint=None, radius=None, nsample=None, in_channel=256 + 3, mlp=[256, 512, 1024], group_all=True)
         
         ##### before remove- dnot delete yet, need for load old weights
-        self.fc1 = nn.Linear(1024, 512)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.drop1 = nn.Dropout(0.4)
-        self.fc2 = nn.Linear(512, 256)
-        self.bn2 = nn.BatchNorm1d(256)
-        self.drop2 = nn.Dropout(0.4)
-        self.fc3 = nn.Linear(256, num_class)
+        # self.fc1 = nn.Linear(1024, 512)
+        # self.bn1 = nn.BatchNorm1d(512)
+        # self.drop1 = nn.Dropout(0.4)
+        # self.fc2 = nn.Linear(512, 256)
+        # self.bn2 = nn.BatchNorm1d(256)
+        # self.drop2 = nn.Dropout(0.4)
+        # self.fc3 = nn.Linear(256, num_class)
         #####
 
         self.project = SoftProjection(projections_group_size)
