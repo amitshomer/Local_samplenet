@@ -130,8 +130,12 @@ class Local_samplenet(nn.Module):
         max_cost = torch.mean(max_cost)
         cost_p1_p2 = torch.mean(cost_p1_p2)
         cost_p2_p1 = torch.mean(cost_p2_p1)
-        # loss = cost_p1_p2 + max_cost + (gamma + delta * pc_size) * cost_p2_p1
-        loss =  cost_p1_p2 + max_cost 
+        
+        ## All loss - royi after finish mask this
+        loss = cost_p1_p2 + max_cost + (gamma + delta * pc_size) * cost_p2_p1
+        
+        ## Partial loss- royi unmask this
+        # loss =  cost_p1_p2 + max_cost 
 
         if self.output_shape == "bcn":
             ref_pc = ref_pc.permute(0, 2, 1).contiguous()
