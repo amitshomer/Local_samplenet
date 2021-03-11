@@ -123,7 +123,7 @@ def main(args):
 
     '''MODEL LOADING'''
     clas_tesk_dir= 'log/pointnet_cls_0908/'
-    sample_net_dir= 'log/classification/2020-10-26_19-29/'
+    sample_net_dir= 'log/classification/2021-01-25_22-26/'
 
     # classifier = pointnet_cls.get_model(40,normal_channel=args.normal).cuda()
     model_name = os.listdir(clas_tesk_dir+'/logs')[0].split('.')[0]

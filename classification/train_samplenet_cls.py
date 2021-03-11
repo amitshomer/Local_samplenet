@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate [default: 1e-4]')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
     parser.add_argument("-in", "--num-in-points", type=int, default=1024, help="Number of input Points [default: 1024]")
-    parser.add_argument("-out", "--num-out-points", type=int, default=16, help="Number of output points [2, 1024] [default: 64]")
+    parser.add_argument("-out", "--num-out-points", type=int, default=32, help="Number of output points [2, 1024] [default: 64]")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
     parser.add_argument("--alpha", type=float, default=30, help="Simplification regularization loss weight [default: 0.01]")
     parser.add_argument("--gamma", type=float, default=1, help="Lb constant regularization loss weight [default: 1]")
@@ -128,15 +128,18 @@ def main(args):
 
     '''MODEL LOADING'''
     # path_saved_cls = 'log/checkpoints/best_model_BU.pth'
-    experiment_dir= 'log/pointnet_cls_0908/'
+    task_dir= 'log/pointnet_cls_task/'
     # classifier = pointnet_cls.get_model(40,normal_channel=args.normal).cuda()
-    model_name = os.listdir(experiment_dir+'/logs')[0].split('.')[0]
+    # model_name = os.listdir(experiment_dir+'/logs')[0].split('.')[0]
+    model_name = os.listdir(task_dir+'/model')[0].split('.')[0]
+
     MODEL = importlib.import_module(model_name)
     
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     criterion = MODEL.get_loss().cuda()
 
-    checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model_no_normal.pth')
+    # checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model_no_normal.pth')
+    checkpoint = torch.load(str(task_dir) + '/weight/model_no_dropout.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
 
     # classifier.load_state_dict(torch.load(path_saved_cls)).
@@ -242,7 +245,7 @@ def main(args):
             points, target = points.cuda(), target.cuda()
 
 
-            simp_pc, proj_pc = classifier.sampler(points)
+            simp_pc, proj_pc, _ = classifier.sampler(points)
             pred, trans_feat = classifier(proj_pc)
             
              #loss

@@ -61,7 +61,7 @@ class SoftProjection(nn.Module):
     def forward(self, point_cloud, query_cloud, point_features=None, action="project"):
         point_cloud = point_cloud.contiguous()
         query_cloud = query_cloud.contiguous()
-
+        
         if action == "project":
             return self.project(point_cloud, query_cloud)
         elif action == "propagate":
@@ -138,6 +138,8 @@ class SoftProjection(nn.Module):
 
     def project(self, point_cloud, query_cloud, hard=False):
         grouped_points, _ = self._group_points(point_cloud, query_cloud)
+        grouped_points = grouped_points.permute(0,1,3,2) ####ADd
+
         dist = self._get_distances(grouped_points, query_cloud)
 
         # pass through softmax to get weights

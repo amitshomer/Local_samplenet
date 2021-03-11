@@ -105,7 +105,7 @@ class SampleNet(nn.Module):
         simp = y
         match = None
         proj = None
-
+        idx = None
         # Projected points
         if self.training:
             if not self.skip_projection:
@@ -114,6 +114,7 @@ class SampleNet(nn.Module):
                 proj = simp
 
         # Matched points
+        
         else:  # Inference
             # Retrieve nearest neighbor indices
             _, idx = KNN(1, transpose_mode=False)(x.contiguous(), y.contiguous())

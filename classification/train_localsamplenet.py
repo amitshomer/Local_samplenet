@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from tqdm import tqdm
 import sys
-import utils.provider
+import provider
 import importlib
 import shutil
 from models import pointnet_cls
@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=32, help='batch size in training [default: 24]')
     parser.add_argument('--model', default='pointnet_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--epoch',  default=400, type=int, help='number of epoch in training [default: 200]')
-    parser.add_argument('--learning_rate', default=0.004, type=float, help='learning rate in training [default: 0.001]')
+    parser.add_argument('--learning_rate', default=0.01, type=float, help='learning rate in training [default: 0.001]')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device [default: 0]')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
@@ -58,11 +58,12 @@ def parse_args():
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
     parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 40")
 
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=16, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=64, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=1, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=1024, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
-    parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
-    parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
+    parser.add_argument("--trans_norm", type=bool, default=False, help="shift to center each patch")
+    parser.add_argument("--scale_norm", type=bool, default=False, help="normelized scale of each patch")
+    parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
 
     return parser.parse_args()
 
@@ -139,7 +140,7 @@ def main(args):
                                                      normal_channel=args.normal)
     TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, modelnet=args.modelnet, split='test', 
                                                     normal_channel=args.normal)
-    trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4,drop_last=True)
+    trainDataLoader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=args.batch_size, shuffle=True, num_workers=4,drop_last=True)
     testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4,drop_last=True)
    
     #models loading
@@ -151,7 +152,7 @@ def main(args):
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     # criterion = MODEL.get_loss().cuda()
-    checkpoint = torch.load(str(task_dir) + '/weight/best_model_no_normal.pth')
+    checkpoint = torch.load(str(task_dir) + '/weight/model_no_dropout.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
     classifier.requires_grad_(False)
     classifier.eval().cuda()
@@ -168,7 +169,8 @@ def main(args):
         nsample_per_patch = args.nsample_per_patch ,
         seed_choice = args.seeds_choice,
         trans_norm = args.trans_norm, 
-        scale_norm = args.scale_norm
+        scale_norm = args.scale_norm,
+        global_fetuers=args.concat_global_fetures
         )
 
     sampler.requires_grad_(True)
@@ -218,11 +220,10 @@ def main(args):
             points, target = data
             
             # points = points.data.numpy()
-            # # TODO amit: try to use augmentations when stable. 23/09
-            # points=provider.rotate_point_cloud(points[:,:, 0:3])
-            # points[:,:, 0:3]=provider.jitter_point_cloud(points[:,:, 0:3])
-            # points = torch.Tensor(points)
-
+            # # # TODO amit: try to use augmentations when stable.
+            # # points=provider.rotate_point_cloud(points[:,:, 0:3])
+            # # points[:,:, 0:3]=provider.jitter_point_cloud(points[:,:, 0:3])
+            # # points = torch.Tensor(points)
 
             # points = provider.random_point_dropout(points)
             # points[:,:, 0:3] = provider.random_scale_point_cloud(points[:,:, 0:3])

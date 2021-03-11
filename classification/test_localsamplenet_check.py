@@ -15,6 +15,8 @@ import src.samplenet
 from data.ModelNetDataLoader import ModelNetDataLoader
 from src import sputils
 from src.samplenet import SampleNet
+from src.random_sampling import RandomSampler
+
 import matplotlib.pyplot as plt
 import open3d as o3d
 import matplotlib.pyplot as plt
@@ -180,7 +182,7 @@ def main(args):
         '''MODEL LOADING'''
         ### model load names###
         clas_tesk_dir= 'log/pointnet_cls_0908/'
-        sample_net_dir= 'log/classification/2020-12-26_10-27/'
+        sample_net_dir= 'log/classification/2021-02-14_20-3/'
         
         seed_net_dir= 'log/classification/2020-10-26_19-29/'
 

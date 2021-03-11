@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from tqdm import tqdm
 import sys
-# import utils.provider
+import utils.provider
 import importlib
 import shutil
 from models import pointnet_cls
@@ -23,6 +23,9 @@ from mpl_toolkits import mplot3d
 from models.local_samplenet import Local_samplenet
 import src.sputils
 from knn_cuda import KNN
+from src.random_sampling import RandomSampler
+from src.fps import FPSSampler
+from models.pointnet_util2 import farthest_point_sample ,index_points
 
 import time
 import matplotlib.pyplot as plt
@@ -51,15 +54,15 @@ def parse_args():
 
 
     parser.add_argument("-npatches", "--num-patchs", type=int, default=16, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=64, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=32, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
-    parser.add_argument("--concat_global_fetures", type=bool, default=True, help="concat global seeds to each patch")
 
+    parser.add_argument('--sample_model', default='Random', help='LS/FPS/Random')
     return parser.parse_args()
 
-def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=None):
+def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=None,random_sampler =None, fps_sampler=None):
     mean_correct = []
     class_acc = np.zeros((num_class,3))
     for j, data in tqdm(enumerate(loader), total=len(loader)):
@@ -105,37 +108,47 @@ def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=
             projected_points, end_points_sampler = classifier.sampler(points)
            
             #####
+            if args.sample_model == 'LS' : 
+                simpc = end_points_sampler['simplified_points']
+                #enter_points= simpc.permute(0,2,1)
+                simpc = simpc.permute(0,2,1)
+                x= points
+                ####
+                
+                _, idx = KNN(1, transpose_mode=False)(x.contiguous(), simpc.contiguous())
+
+                """Notice that we detach the tensors and do computations in numpy,
+                and then convert back to Tensors.
+                This should have no effect as the network is in eval() mode
+                and should require no gradients.
+                """
+                # Convert to numpy arrays in B x N x 3 format. we assume 'bcn' format.
+                x = x.permute(0, 2, 1).cpu().detach().numpy()
+                simpc = simpc.permute(0, 2, 1).cpu().detach().numpy()
+
+                idx = idx.cpu().detach().numpy()
+                idx = np.squeeze(idx, axis=1)
+                # idx= np.random.randint(1023, size=(1, 32))
+
+                z = sputils.nn_matching(
+                    x, idx, args.num_out_points, complete_fps=True
+                )
+
+                # Matched points are in B x N x 3 format.
+                match = torch.tensor(z, dtype=torch.float32).cuda()
+                
+                match = match.permute(0,2,1)
             
-            simpc = end_points_sampler['simplified_points']
-            #enter_points= simpc.permute(0,2,1)
-            simpc = simpc.permute(0,2,1)
-            x= points
-            ####
+            if args.sample_model == 'Random' : 
+                match= random_sampler(points.contiguous())
             
-            _, idx = KNN(1, transpose_mode=False)(x.contiguous(), simpc.contiguous())
-
-            """Notice that we detach the tensors and do computations in numpy,
-            and then convert back to Tensors.
-            This should have no effect as the network is in eval() mode
-            and should require no gradients.
-            """
-            # Convert to numpy arrays in B x N x 3 format. we assume 'bcn' format.
-            x = x.permute(0, 2, 1).cpu().detach().numpy()
-            simpc = simpc.permute(0, 2, 1).cpu().detach().numpy()
-
-            idx = idx.cpu().detach().numpy()
-            idx = np.squeeze(idx, axis=1)
-            # idx= np.random.randint(1023, size=(1, 32))
-
-            z = sputils.nn_matching(
-                x, idx, args.num_out_points, complete_fps=True
-            )
-
-            # Matched points are in B x N x 3 format.
-            match = torch.tensor(z, dtype=torch.float32).cuda()
+            if args.sample_model == 'FPS' : 
+                # match= fps_sampler(points.contiguous())
+                
+                fps_idx = farthest_point_sample(points.permute(0,2,1), 512,random=False) # [B, npoint, C]
+                match = index_points(points.permute(0,2,1), fps_idx)
+                match = match.permute(0,2,1)
             
-            match = match.permute(0,2,1)
-
             pred, _ = classifier(match)
             
             vote_pool += pred
@@ -190,7 +203,7 @@ def main(args):
 
         ### model load names###
     clas_tesk_dir= 'log/pointnet_cls_task/'
-    localsample_net_dir= 'log/LocalSamplenet/2021-02-19_10-12/'
+    localsample_net_dir= 'log/LocalSamplenet/2021-02-01_22-46/'
    
    
    
@@ -203,10 +216,7 @@ def main(args):
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     criterion = MODEL.get_loss().cuda()
-   
-    # checkpoint = torch.load(str(clas_tesk_dir) + 'weight/best_model_no_normal.pth')
-    checkpoint = torch.load(str(clas_tesk_dir) + 'weight/model_no_dropout.pth')
-    
+    checkpoint = torch.load(str(clas_tesk_dir) + 'weight/best_model_no_normal.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
     
     classifier.requires_grad_(False)
@@ -260,13 +270,14 @@ def main(args):
         nsample_per_patch = args.nsample_per_patch ,
         seed_choice = args.seeds_choice,
         trans_norm=args.trans_norm, 
-        scale_norm=args.scale_norm,
-        global_fetuers=args.concat_global_fetures
+        scale_norm=args.scale_norm
         )
     
     classifier.sampler = sampler
 
-    
+    random_sampler = RandomSampler(num_out_points= 1024,input_shape="bcn", output_shape="bcn")
+    fps_sampler = FPSSampler(num_out_points= args.num_out_points,permute=False,input_shape="bcn", output_shape="bcn")
+
     checkpoint = torch.load(str(localsample_net_dir) + 'checkpoints/sampler_cls_2609.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
 
@@ -278,7 +289,7 @@ def main(args):
         if args.seed_maker =="samplenet":
             instance_acc, class_acc,seed_idx = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=classifier1.sampler.eval())
         else:
-            instance_acc, class_acc = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=None)
+            instance_acc, class_acc = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=None,random_sampler=random_sampler,fps_sampler= fps_sampler)
 
         log_string('Test Instance Accuracy: %f, Class Accuracy: %f' % (instance_acc, class_acc))
 
