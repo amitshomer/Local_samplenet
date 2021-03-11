@@ -63,7 +63,7 @@ def parse_args():
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
-    parser.add_argument("--concat_global_fetures", type=bool, default=True, help="concat global seeds to each patch")
+    parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
 
     return parser.parse_args()
 
