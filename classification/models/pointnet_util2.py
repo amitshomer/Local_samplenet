@@ -251,11 +251,50 @@ def sample_and_group_all(xyz, points):
         new_points = grouped_xyz
     return new_xyz, new_points
 
+class STN3d(nn.Module):
+    def __init__(self, channel):
+        super(STN3d, self).__init__()
+        self.conv1 = torch.nn.Conv1d(channel, 64, 1)
+        self.conv2 = torch.nn.Conv1d(64, 128, 1)
+        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
+        self.fc1 = nn.Linear(1024, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 24)
+        self.relu = nn.ReLU()
+
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(128)
+        self.bn3 = nn.BatchNorm1d(1024)
+        self.bn4 = nn.BatchNorm1d(512)
+        self.bn5 = nn.BatchNorm1d(256)
+
+    def forward(self, x):
+        batchsize = x.size()[0]
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = torch.max(x, 2, keepdim=True)[0]
+        x = x.view(-1, 1024)
+
+        x = F.relu(self.bn4(self.fc1(x)))
+        x = F.relu(self.bn5(self.fc2(x)))
+        x = self.fc3(x)
+
+        # iden = Variable(torch.from_numpy(np.array([1, 0, 0, 0, 1, 0, 0, 0, 1]).astype(np.float32))).view(1, 9).repeat(
+            # batchsize, 1)
+        # if x.is_cuda:
+            # iden = iden.cuda()
+        # x = x + iden
+        x = x.view(-1, 3, 8)
+        return x
+
+
 
 class PointNetSetAbstraction(nn.Module):
-    def __init__(self, num_in_point, npoint, radius, nsample, in_channel1 ,in_channel2, mlp,mlp2, group_all,knn,trans_norm , scale_norm , use_xyz,use_nchw,global_fetuers,seed_choice,batch_size):
+    def __init__(self,num_out_point, num_in_point,one_feture_vec, npoint, radius, nsample, in_channel1 ,in_channel2, mlp,mlp2, group_all,knn,trans_norm , scale_norm , use_xyz,use_nchw,global_fetuers,seed_choice,batch_size):
         super(PointNetSetAbstraction, self).__init__()
         self.num_in_point = num_in_point
+        self.num_out_point = num_out_point
         self.npoint = npoint
         self.radius = radius
         self.nsample = nsample
@@ -268,10 +307,12 @@ class PointNetSetAbstraction(nn.Module):
         self.knn = knn
         self.trans_norm = trans_norm
         self.scale_norm = scale_norm
+       
         self.mlp2 = mlp2
         self.use_xyz = use_xyz
         self.use_nchw = use_nchw
         self.seed_choice = seed_choice
+        self.one_feture_vec = one_feture_vec
         last_channel = in_channel1
         last_channel2 = in_channel2
         
@@ -279,12 +320,25 @@ class PointNetSetAbstraction(nn.Module):
             self.mlp_convs.append(nn.Conv2d(last_channel, out_channel, 1))
             self.mlp_bns.append(nn.BatchNorm2d(out_channel))
             last_channel = out_channel
-
         
-        for out_channel2 in mlp2:
-            self.mlp_convs2.append(nn.Conv2d(last_channel2, out_channel2, 1))
-            self.mlp_bns2.append(nn.BatchNorm2d(out_channel2))
-            last_channel2 = out_channel2
+       
+        if self.one_feture_vec: 
+            
+          
+            
+            self.fc1 = nn.Linear(self.npoint*128, 2*self.npoint*128)
+            self.fc2 = nn.Linear(2*self.npoint*128, 2*self.npoint*128)
+            self.fc3 = nn.Linear(2*self.npoint*128, 2*self.npoint*128)
+            self.fc4 = nn.Linear(2*self.npoint*128, 3 * self.num_out_point)
+
+            self.bn_fc1 = nn.BatchNorm1d(2*self.npoint*128)
+            self.bn_fc2 = nn.BatchNorm1d(2*self.npoint*128)
+            self.bn_fc3 = nn.BatchNorm1d(2*self.npoint*128)
+        else: 
+            for out_channel2 in mlp2:
+                self.mlp_convs2.append(nn.Conv2d(last_channel2, out_channel2, 1))
+                self.mlp_bns2.append(nn.BatchNorm2d(out_channel2))
+                last_channel2 = out_channel2
 
         self.group_all = group_all
 
@@ -306,10 +360,6 @@ class PointNetSetAbstraction(nn.Module):
         else:
             new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm  = sample_and_group(self.num_in_point ,self.npoint, self.radius, self.nsample, xyz, points,self.batch_size, self.knn ,self.trans_norm, self.scale_norm, self.use_xyz ,global_fetuers =self.global_fetuers, seed_choice =self.seed_choice)
 
-
-        # new_xyz: sampled points position data, [B, npoint, C]g
-        # new_points: samplif self.use_nchw :
-
         new_points = new_points.permute(0, 3, 2, 1)#new 
             #new_points = new_points.permute(0, 3, 1, 2)# [B, C+D, nsample,npoint] 
      
@@ -317,30 +367,48 @@ class PointNetSetAbstraction(nn.Module):
             bn = self.mlp_bns[i]
             # new_points =  F.relu(bn(conv(new_points)))
             new_points= F.relu(bn(conv(new_points)))
-       
-        # if self.use_nchw :
         new_points = new_points.permute(0, 2, 3, 1)
+    
        
-        new_points,_ = torch.max(new_points, dim= 2, keepdim= True)
-        # print(new_points.shape)
-       
+        if self.one_feture_vec: 
+           
+            new_points =new_points.permute(0,1,3,2)
+            new_points = torch.reshape(new_points, [self.batch_size, 128*self.npoint, -1])
+            # new_points = torch.squeeze(new_points)
 
-        if self.mlp2 is not None: 
-            new_points = new_points.permute(0, 3, 1, 2)
-            for i, conv in enumerate(self.mlp_convs2):
-                bn2 = self.mlp_bns2[i]
-                if (i!=(len(self.mlp_convs2)-1)):
-                    new_points =  F.relu(bn2(conv(new_points)))
-                else: 
-                    new_points = conv(new_points)
+            new_points = torch.max(new_points, 2)[0]  # Batch x 128
+
+            new_points = F.relu(self.bn_fc1(self.fc1(new_points)))
+            new_points = F.relu(self.bn_fc2(self.fc2(new_points)))
+            new_points = F.relu(self.bn_fc3(self.fc3(new_points)))
+            new_points = self.fc4(new_points)
+
+            new_points = new_points.view(-1, 3, self.num_out_point)
+      
+        else:
+            
         
-       
-        new_points = new_points.permute(0, 2, 3, 1)
-        new_points = torch.max(new_points, 2)[0]
+        
+            new_points,_ = torch.max(new_points, dim= 2, keepdim= True)
+            # print(new_points.shape)
+        
 
+            if self.mlp2 is not None: 
+                new_points = new_points.permute(0, 3, 1, 2)
+                for i, conv in enumerate(self.mlp_convs2):
+                    bn2 = self.mlp_bns2[i]
+                    if (i!=(len(self.mlp_convs2)-1)):
+                        new_points =  F.relu(bn2(conv(new_points)))
+                    else: 
+                        new_points = conv(new_points)
+            
+        
+            new_points = new_points.permute(0, 2, 3, 1)
+            new_points = torch.max(new_points, 2)[0]
 
+        
 
-
+        new_points = new_points.contiguous()
 
         #new_xyz = new_xyz.permute(0, 2, 1)
         return new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm

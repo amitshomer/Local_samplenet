@@ -48,8 +48,8 @@ def parse_args():
     parser.add_argument('--log_dir', type=str, default=None, help='experiment root')
     parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate [default: 1e-4]')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
-    parser.add_argument("-in", "--num-in-points", type=int, default=1024, help="Number of input Points [default: 1024]")
-    parser.add_argument("-out", "--num-out-points", type=int, default=32, help="Number of output points [2, 1024] [default: 64]")
+    parser.add_argument("-in", "--num-in-points", type=int, default= 1024, help="Number of input Points [default: 1024]")
+    parser.add_argument("-out", "--num-out-points", type=int, default= 32, help="Number of output points [2, 1024] [default: 64]")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
     parser.add_argument("--alpha", type=float, default=30, help="Simplification regularization loss weight [default: 0.01]")
     parser.add_argument("--gamma", type=float, default=1, help="Lb constant regularization loss weight [default: 1]")
@@ -57,13 +57,15 @@ def parse_args():
     parser.add_argument("-gs", "--projection-group-size", type=int, default=7, help='Neighborhood size in Soft Projection [default: 8]')
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
     parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 40")
-
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=1, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=1024, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=32, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=32, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
-    parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
+    parser.add_argument("--concat_global_fetures", type=bool, default=True, help="concat global seeds to each patch")
+    
+    parser.add_argument("--one_feture_vec", type=bool, default=False, help="use one feture vector")
+    parser.add_argument("--reduce_to_8", type=bool, default=True, help="reduce 32 points to 8")
 
     return parser.parse_args()
 
@@ -152,7 +154,8 @@ def main(args):
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     # criterion = MODEL.get_loss().cuda()
-    checkpoint = torch.load(str(task_dir) + '/weight/model_no_dropout.pth')
+    # checkpoint = torch.load(str(task_dir) + '/weight/model_no_dropout.pth')
+    checkpoint = torch.load(str(task_dir) + '/weight/best_model_no_normal.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
     classifier.requires_grad_(False)
     classifier.eval().cuda()
@@ -170,7 +173,9 @@ def main(args):
         seed_choice = args.seeds_choice,
         trans_norm = args.trans_norm, 
         scale_norm = args.scale_norm,
-        global_fetuers=args.concat_global_fetures
+        global_fetuers=args.concat_global_fetures,
+        one_feture_vec = args.one_feture_vec,
+        red_to_32 = args.reduce_to_8
         )
 
     sampler.requires_grad_(True)
@@ -241,14 +246,22 @@ def main(args):
             
             # sampler = sampler.train().cuda()
             seed_idx = []
-            projected_points, end_points_sampler = classifier.sampler(points)
+            projected_points,simpc, end_points_sampler = classifier.sampler(points)
             
-            pred, trans_feat = classifier(projected_points.permute(0,2,1))
+
+            if args.one_feture_vec or args.reduce_to_8:
+                pred, trans_feat = classifier(projected_points.permute(0,2,1))
+                # batch_patches_normed = end_points_sampler['batch_patches_normed']
+
+                simplification_loss = classifier.sampler.get_simplification_loss(points, simpc, args.num_out_points)
+
+            else:
+                pred, trans_feat = classifier(projected_points.permute(0,2,1))
+                batch_patches_normed = end_points_sampler['batch_patches_normed']
+                batch_patches_normed_simplified = end_points_sampler['batch_patches_normed_simplified']
+                simplification_loss = classifier.sampler.get_simplification_loss(batch_patches_normed.permute(0,2,1), batch_patches_normed_simplified.permute(0,2,1), args.num_out_points)
             
-            batch_patches_normed = end_points_sampler['batch_patches_normed']
-            batch_patches_normed_simplified = end_points_sampler['batch_patches_normed_simplified']
             
-            simplification_loss = classifier.sampler.get_simplification_loss(batch_patches_normed.permute(0,2,1), batch_patches_normed_simplified.permute(0,2,1), args.num_out_points)
             projection_loss = sampler.get_projection_loss()
             samplenet_loss = args.alpha * simplification_loss + args.lmbda * projection_loss
             # print(projection_loss)

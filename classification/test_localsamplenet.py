@@ -39,27 +39,30 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=4, help='batch size in training')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
-    parser.add_argument('--num_out_points', type=int, default=16, help='out Point Number [default: 32]')
+    parser.add_argument('--num_out_points', type=int, default=32, help='out Point Number [default: 32]')
     parser.add_argument('--log_dir', type=str, default='pointnet_cls_0908', help='Experiment root')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
-    parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores with voting [default: 3]')
-    parser.add_argument("--modelnet", type=float, default=40 ,help="chosie data base for training [default: 40")
+    parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores with voting [default: 1]')
+    parser.add_argument("--modelnet", type=float, default=30 ,help="chosie data base for training [default: 40")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
     
     
     parser.add_argument("--seed_maker", type=str, default='FPS', help="FPS/samplenet")
 
 
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=16, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=64, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=32, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=32, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
     parser.add_argument("--concat_global_fetures", type=bool, default=True, help="concat global seeds to each patch")
+    parser.add_argument("--one_feture_vec", type=bool, default=False, help="use one feture vector")
+    parser.add_argument("--reduce_to_8", type=bool, default=True, help="reduce 32 points to 8")
+
 
     return parser.parse_args()
 
-def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=None):
+def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=None, one_feture_vec=False, reduce_to_8=False):
     mean_correct = []
     class_acc = np.zeros((num_class,3))
     for j, data in tqdm(enumerate(loader), total=len(loader)):
@@ -102,13 +105,17 @@ def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=
             
                 plt.show()
 
-            projected_points, end_points_sampler = classifier.sampler(points)
+            projected_points, simpc , end_points_sampler = classifier.sampler(points)
            
             #####
             
-            simpc = end_points_sampler['simplified_points']
-            #enter_points= simpc.permute(0,2,1)
-            simpc = simpc.permute(0,2,1)
+            if one_feture_vec or reduce_to_8:
+                simpc = simpc
+            else:
+                simpc = end_points_sampler['simplified_points']
+                #enter_points= simpc.permute(0,2,1)
+                simpc = simpc.permute(0,2,1)
+            
             x= points
             ####
             
@@ -127,9 +134,13 @@ def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=
             idx = np.squeeze(idx, axis=1)
             # idx= np.random.randint(1023, size=(1, 32))
 
-            z = sputils.nn_matching(
-                x, idx, args.num_out_points, complete_fps=True
-            )
+            if reduce_to_8: 
+                z = sputils.nn_matching(
+                x, idx, 8, complete_fps=True)
+            else:
+                z = sputils.nn_matching(
+                    x, idx, args.num_out_points, complete_fps=True
+                )
 
             # Matched points are in B x N x 3 format.
             match = torch.tensor(z, dtype=torch.float32).cuda()
@@ -190,7 +201,7 @@ def main(args):
 
         ### model load names###
     clas_tesk_dir= 'log/pointnet_cls_task/'
-    localsample_net_dir= 'log/LocalSamplenet/2021-02-19_10-12/'
+    localsample_net_dir= 'log/LocalSamplenet/2021-04-11_21-31/'
    
    
    
@@ -204,9 +215,9 @@ def main(args):
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     criterion = MODEL.get_loss().cuda()
    
-    # checkpoint = torch.load(str(clas_tesk_dir) + 'weight/best_model_no_normal.pth')
-    checkpoint = torch.load(str(clas_tesk_dir) + 'weight/model_no_dropout.pth')
-    
+    checkpoint = torch.load(str(clas_tesk_dir) + 'weight/best_model_no_normal.pth')
+    # checkpoint = torch.load(str(clas_tesk_dir) + 'weight/model_no_dropout.pth')
+
     classifier.load_state_dict(checkpoint['model_state_dict'])
     
     classifier.requires_grad_(False)
@@ -261,7 +272,11 @@ def main(args):
         seed_choice = args.seeds_choice,
         trans_norm=args.trans_norm, 
         scale_norm=args.scale_norm,
-        global_fetuers=args.concat_global_fetures
+        global_fetuers=args.concat_global_fetures,
+        one_feture_vec = args.one_feture_vec,
+        red_to_32 = args.reduce_to_8
+
+
         )
     
     classifier.sampler = sampler
@@ -278,7 +293,7 @@ def main(args):
         if args.seed_maker =="samplenet":
             instance_acc, class_acc,seed_idx = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=classifier1.sampler.eval())
         else:
-            instance_acc, class_acc = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=None)
+            instance_acc, class_acc = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=None,one_feture_vec=args.one_feture_vec, reduce_to_8=args.reduce_to_8)
 
         log_string('Test Instance Accuracy: %f, Class Accuracy: %f' % (instance_acc, class_acc))
 

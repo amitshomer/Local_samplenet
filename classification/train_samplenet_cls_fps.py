@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate [default: 1e-4]')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
     parser.add_argument("-in", "--num-in-points", type=int, default=1024, help="Number of input Points [default: 1024]")
-    parser.add_argument("-out", "--num-out-points", type=int, default=16, help="Number of output points [2, 1024] [default: 64]")
+    parser.add_argument("-out", "--num-out-points", type=int, default=128, help="Number of output points [2, 1024] [default: 64]")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
     parser.add_argument("--alpha", type=float, default=30, help="Simplification regularization loss weight [default: 0.01]")
     parser.add_argument("--gamma", type=float, default=1, help="Lb constant regularization loss weight [default: 1]")
