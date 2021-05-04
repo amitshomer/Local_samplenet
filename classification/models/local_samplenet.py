@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from models.pointnet_util2 import PointNetSetAbstraction, denormalize_patch ,STN3d 
 from src.soft_projection_localnet import SoftProjection
 from src.soft_projection import SoftProjection as SoftProjection_sample
-
+import numpy as np 
 import torch
 ##from src.soft_projection import SoftProjection
 from src.chamfer_distance import ChamferDistance
@@ -20,6 +20,7 @@ class Local_samplenet(nn.Module):
         num_output_points=32 ,
         one_feture_vec = False,
         red_to_32 = False,
+        one_mlp_feture = False,
         normal_channel=False,
         global_fetuers=False,
         npatch=4,
@@ -41,7 +42,7 @@ class Local_samplenet(nn.Module):
         self.batch_size = batch_size
         self.nsample_per_patch = nsample_per_patch
         self.bottleneck_size =bottleneck_size
-        self.sa1 = PointNetSetAbstraction( num_out_point=num_output_points ,num_in_point = num_in_point, one_feture_vec = self.one_feture_vec, npoint=self.npatch, radius=0.2, nsample=self.nsample_per_patch, in_channel1=in_channel,in_channel2=self.bottleneck_size , mlp=[64, 64,64,128,self.bottleneck_size],mlp2=[256, 256, 256, 3*int(self.npoint_per_patch)], group_all=False, knn=True, trans_norm=trans_norm, scale_norm=scale_norm,use_xyz=False,use_nchw=True,global_fetuers=global_fetuers,seed_choice=seed_choice, batch_size=batch_size  )
+        self.sa1 = PointNetSetAbstraction( num_out_point=num_output_points ,num_in_point = num_in_point, one_feture_vec = self.one_feture_vec,one_mlp_feture= one_mlp_feture, npoint=self.npatch, radius=0.2, nsample=self.nsample_per_patch, in_channel1=in_channel,in_channel2=self.bottleneck_size , mlp=[64, 64,64,128,self.bottleneck_size],mlp2=[256, 256, 256, 3*int(self.npoint_per_patch)], group_all=False, knn=True, trans_norm=trans_norm, scale_norm=scale_norm,use_xyz=False,use_nchw=True,global_fetuers=global_fetuers,seed_choice=seed_choice, batch_size=batch_size  )
         if red_to_32:
             self.red_to_32 = red_to_32
             self.mini_pointnet = STN3d(3)
@@ -130,9 +131,20 @@ class Local_samplenet(nn.Module):
 
 
             if self.red_to_32 :
-                simplified_points = self.mini_pointnet(simplified_points.permute(0,2,1)) 
-                simp = simplified_points
                 
+                #random reduce point
+                # simplified_points = simplified_points.cpu().detach().numpy()
+                # simplified_points= simplified_points[:,np.random.randint(0, 31, size=(8))]
+                # simplified_points = torch.tensor(simplified_points, dtype=torch.float32).cuda()
+                # simplified_points = simplified_points.permute(0,2,1)
+                # simplified_points = simplified_points.contiguous()
+
+                
+                #mini samplenet reduce piont
+                simplified_points = self.mini_pointnet(simplified_points.permute(0,2,1)) 
+                
+                
+                simp = simplified_points
                 projected_points = self.project(xyz, simplified_points)
                 projected_points = projected_points.permute(0,2,1)
 

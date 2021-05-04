@@ -45,19 +45,17 @@ def parse_args():
     parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores with voting [default: 1]')
     parser.add_argument("--modelnet", type=float, default=30 ,help="chosie data base for training [default: 40")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
-    
-    
+
     parser.add_argument("--seed_maker", type=str, default='FPS', help="FPS/samplenet")
-
-
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=32, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=32, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=8, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=128, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
-    parser.add_argument("--concat_global_fetures", type=bool, default=True, help="concat global seeds to each patch")
-    parser.add_argument("--one_feture_vec", type=bool, default=False, help="use one feture vector")
-    parser.add_argument("--reduce_to_8", type=bool, default=True, help="reduce 32 points to 8")
+    parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
+    parser.add_argument("--one_feture_vec", type=bool, default=True, help="use one feture vector")
+    parser.add_argument("--reduce_to_8", type=bool, default=False, help="reduce 32 points to 8")
+    parser.add_argument("--one_mlp_feture", type=bool, default=True, help="one feture with mlp")
 
 
     return parser.parse_args()
@@ -132,15 +130,22 @@ def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=
 
             idx = idx.cpu().detach().numpy()
             idx = np.squeeze(idx, axis=1)
-            # idx= np.random.randint(1023, size=(1, 32))
+            # idx= np.random.randint(1023,, size=(1, 32))
 
             if reduce_to_8: 
                 z = sputils.nn_matching(
                 x, idx, 8, complete_fps=True)
             else:
+                # slice_index= np.random.randint(0,31, size=8)
+                # idx= idx[:,slice_index]
+                
+                # z = sputils.nn_matching(
+                #     x, idx, 8, complete_fps=True)
+
                 z = sputils.nn_matching(
                     x, idx, args.num_out_points, complete_fps=True
                 )
+                
 
             # Matched points are in B x N x 3 format.
             match = torch.tensor(z, dtype=torch.float32).cuda()
@@ -190,7 +195,7 @@ def main(args):
     logger.addHandler(file_handler)
     log_string('PARAMETER ...')
     log_string(args)
-
+    
     '''DATA LOADING'''
     log_string('Load dataset ...')
     DATA_PATH = 'data/modelnet40_normal_resampled/'
@@ -201,7 +206,7 @@ def main(args):
 
         ### model load names###
     clas_tesk_dir= 'log/pointnet_cls_task/'
-    localsample_net_dir= 'log/LocalSamplenet/2021-04-11_21-31/'
+    localsample_net_dir= 'log/LocalSamplenet/2021-04-24_19-14/'
    
    
    
@@ -215,8 +220,8 @@ def main(args):
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     criterion = MODEL.get_loss().cuda()
    
-    checkpoint = torch.load(str(clas_tesk_dir) + 'weight/best_model_no_normal.pth')
-    # checkpoint = torch.load(str(clas_tesk_dir) + 'weight/model_no_dropout.pth')
+    # checkpoint = torch.load(str(clas_tesk_dir) + 'weight/best_model_no_normal.pth')
+    checkpoint = torch.load(str(clas_tesk_dir) + 'weight/model_no_dropout.pth')
 
     classifier.load_state_dict(checkpoint['model_state_dict'])
     
@@ -274,7 +279,8 @@ def main(args):
         scale_norm=args.scale_norm,
         global_fetuers=args.concat_global_fetures,
         one_feture_vec = args.one_feture_vec,
-        red_to_32 = args.reduce_to_8
+        red_to_32 = args.reduce_to_8,
+        one_mlp_feture =args.one_mlp_feture
 
 
         )

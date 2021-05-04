@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=32, help='batch size in training [default: 24]')
     parser.add_argument('--model', default='pointnet_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--epoch',  default=400, type=int, help='number of epoch in training [default: 200]')
-    parser.add_argument('--learning_rate', default=0.01, type=float, help='learning rate in training [default: 0.001]')
+    parser.add_argument('--learning_rate', default=0.01, type=float, help='learning rate in training [default: 0.01]')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device [default: 0]')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer for training [default: Adam]')
@@ -57,15 +57,17 @@ def parse_args():
     parser.add_argument("-gs", "--projection-group-size", type=int, default=7, help='Neighborhood size in Soft Projection [default: 8]')
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
     parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 40")
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=32, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=32, help="Number of sample for each patch [default: 256]")
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=8, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=128, help="Number of sample for each patch [default: 256]")
     parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
-    parser.add_argument("--concat_global_fetures", type=bool, default=True, help="concat global seeds to each patch")
-    
+    parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
     parser.add_argument("--one_feture_vec", type=bool, default=False, help="use one feture vector")
-    parser.add_argument("--reduce_to_8", type=bool, default=True, help="reduce 32 points to 8")
+    parser.add_argument("--one_mlp_feture", type=bool, default=False, help="one feture with mlp")
+
+    parser.add_argument("--reduce_to_8", type=bool, default=False, help="reduce 32 points to 8")
+    
 
     return parser.parse_args()
 
@@ -154,8 +156,9 @@ def main(args):
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     # criterion = MODEL.get_loss().cuda()
-    # checkpoint = torch.load(str(task_dir) + '/weight/model_no_dropout.pth')
-    checkpoint = torch.load(str(task_dir) + '/weight/best_model_no_normal.pth')
+    print("no drpout Task")
+    checkpoint = torch.load(str(task_dir) + '/weight/model_no_dropout.pth')
+    # checkpoint = torch.load(str(task_dir) + '/weight/best_model_no_normal.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
     classifier.requires_grad_(False)
     classifier.eval().cuda()
@@ -175,7 +178,8 @@ def main(args):
         scale_norm = args.scale_norm,
         global_fetuers=args.concat_global_fetures,
         one_feture_vec = args.one_feture_vec,
-        red_to_32 = args.reduce_to_8
+        red_to_32 = args.reduce_to_8,
+        one_mlp_feture = args.one_mlp_feture
         )
 
     sampler.requires_grad_(True)

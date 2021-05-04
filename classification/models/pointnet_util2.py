@@ -256,27 +256,28 @@ class STN3d(nn.Module):
         super(STN3d, self).__init__()
         self.conv1 = torch.nn.Conv1d(channel, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 24)
+        # self.conv3 = torch.nn.Conv1d(128, 1024, 1)
+        # self.fc1 = nn.Linear(1024, 512)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 24)
         self.relu = nn.ReLU()
 
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.bn5 = nn.BatchNorm1d(256)
+        # self.bn3 = nn.BatchNorm1d(1024)
+        self.bn4 = nn.BatchNorm1d(128)
+        self.bn5 = nn.BatchNorm1d(64)
 
     def forward(self, x):
         batchsize = x.size()[0]
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
+        # x = F.relu(self.bn3(self.conv3(x)))
         x = torch.max(x, 2, keepdim=True)[0]
-        x = x.view(-1, 1024)
+        # x = x.view(-1, 1024)
+        x = x.view(-1, 128)
 
-        x = F.relu(self.bn4(self.fc1(x)))
+        # x = F.relu(self.bn4(self.fc1(x)))
         x = F.relu(self.bn5(self.fc2(x)))
         x = self.fc3(x)
 
@@ -291,7 +292,7 @@ class STN3d(nn.Module):
 
 
 class PointNetSetAbstraction(nn.Module):
-    def __init__(self,num_out_point, num_in_point,one_feture_vec, npoint, radius, nsample, in_channel1 ,in_channel2, mlp,mlp2, group_all,knn,trans_norm , scale_norm , use_xyz,use_nchw,global_fetuers,seed_choice,batch_size):
+    def __init__(self,num_out_point, num_in_point,one_feture_vec,one_mlp_feture, npoint, radius, nsample, in_channel1 ,in_channel2, mlp,mlp2, group_all,knn,trans_norm , scale_norm , use_xyz,use_nchw,global_fetuers,seed_choice,batch_size):
         super(PointNetSetAbstraction, self).__init__()
         self.num_in_point = num_in_point
         self.num_out_point = num_out_point
@@ -303,6 +304,9 @@ class PointNetSetAbstraction(nn.Module):
         self.global_fetuers = global_fetuers
         self.mlp_convs2 = nn.ModuleList()
         self.mlp_bns2 = nn.ModuleList()
+
+        self.mlp_conv_one_fet= nn.ModuleList()
+
         self.batch_size= batch_size
         self.knn = knn
         self.trans_norm = trans_norm
@@ -313,6 +317,7 @@ class PointNetSetAbstraction(nn.Module):
         self.use_nchw = use_nchw
         self.seed_choice = seed_choice
         self.one_feture_vec = one_feture_vec
+        self.one_mlp_feture = one_mlp_feture
         last_channel = in_channel1
         last_channel2 = in_channel2
         
@@ -324,17 +329,33 @@ class PointNetSetAbstraction(nn.Module):
        
         if self.one_feture_vec: 
             
-          
-            
-            self.fc1 = nn.Linear(self.npoint*128, 2*self.npoint*128)
-            self.fc2 = nn.Linear(2*self.npoint*128, 2*self.npoint*128)
-            self.fc3 = nn.Linear(2*self.npoint*128, 2*self.npoint*128)
-            self.fc4 = nn.Linear(2*self.npoint*128, 3 * self.num_out_point)
+            if self.one_mlp_feture:
+                self.mlp_convs1_fet = nn.Conv2d(128, 256, 1)
+                self.mlp_convs2_fet = nn.Conv2d(256, 256, 1)
+                
+                self.bn1_fet = nn.BatchNorm2d(256)
+                self.bn2_fet = nn.BatchNorm2d(256)
+               
 
-            self.bn_fc1 = nn.BatchNorm1d(2*self.npoint*128)
-            self.bn_fc2 = nn.BatchNorm1d(2*self.npoint*128)
-            self.bn_fc3 = nn.BatchNorm1d(2*self.npoint*128)
+                self.fc1 = nn.Linear(256, 256)
+                self.fc2 = nn.Linear(256, 256)
+                self.fc3 = nn.Linear(256, 256)
+                self.fc4 = nn.Linear(256, 3 * self.num_out_point)
+
+                self.bn_fc1 = nn.BatchNorm1d(256)
+                self.bn_fc2 = nn.BatchNorm1d(256)
+                self.bn_fc3 = nn.BatchNorm1d(256)
+            else:
+                self.fc1 = nn.Linear(self.npoint*128, 2*self.npoint*128)
+                self.fc2 = nn.Linear(2*self.npoint*128, 2*self.npoint*128)
+                self.fc3 = nn.Linear(2*self.npoint*128, 2*self.npoint*128)
+                self.fc4 = nn.Linear(2*self.npoint*128, 3 * self.num_out_point)
+
+                self.bn_fc1 = nn.BatchNorm1d(2*self.npoint*128)
+                self.bn_fc2 = nn.BatchNorm1d(2*self.npoint*128)
+                self.bn_fc3 = nn.BatchNorm1d(2*self.npoint*128)
         else: 
+            
             for out_channel2 in mlp2:
                 self.mlp_convs2.append(nn.Conv2d(last_channel2, out_channel2, 1))
                 self.mlp_bns2.append(nn.BatchNorm2d(out_channel2))
@@ -371,12 +392,22 @@ class PointNetSetAbstraction(nn.Module):
     
        
         if self.one_feture_vec: 
-           
-            new_points =new_points.permute(0,1,3,2)
-            new_points = torch.reshape(new_points, [self.batch_size, 128*self.npoint, -1])
+            if self.one_mlp_feture :  
+                
+                new_points,_ = torch.max(new_points, dim= 2, keepdim= True)
+                
+                new_points = new_points.permute(0,3,2,1)
+                new_points = F.relu(self.bn1_fet(self.mlp_convs1_fet(new_points)))
+                new_points = F.relu(self.bn2_fet(self.mlp_convs2_fet(new_points)))
+                new_points,_ = torch.max(new_points, dim= 3, keepdim= True)
+                new_points = new_points.permute(0, 2, 3, 1)
+                new_points = torch.squeeze(new_points)
+            else: 
+                new_points =new_points.permute(0,1,3,2)
+                new_points = torch.reshape(new_points, [self.batch_size, 128*self.npoint, -1])
             # new_points = torch.squeeze(new_points)
 
-            new_points = torch.max(new_points, 2)[0]  # Batch x 128
+                new_points = torch.max(new_points, 2)[0]  # Batch x 128
 
             new_points = F.relu(self.bn_fc1(self.fc1(new_points)))
             new_points = F.relu(self.bn_fc2(self.fc2(new_points)))
@@ -387,7 +418,7 @@ class PointNetSetAbstraction(nn.Module):
       
         else:
             
-        
+            
         
             new_points,_ = torch.max(new_points, dim= 2, keepdim= True)
             # print(new_points.shape)
