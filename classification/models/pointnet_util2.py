@@ -5,6 +5,8 @@ from time import time
 import numpy as np
 from knn_cuda import KNN
 from einops import repeat
+from src.sampleSeed import SampleNet
+
 
 def timeit(tag, t):
     print("{}: {}s".format(tag, time() - t))
@@ -166,7 +168,7 @@ def denormalize_patch(normed_xyz, patch_mean, patch_norm, trans_norm=True, scale
     return grouped_xyz
 
 
-def sample_and_group(num_in_point, npoint, radius, nsample, xyz, points, bacth_size,knn= False, trans_norm=True, scale_norm=True, returnfps=False,use_xyz=True,global_fetuers=False ,seed_choice = 'FPS'):
+def sample_and_group(simp_seed,num_in_point, npoint, radius, nsample, xyz, points, bacth_size,knn= False, trans_norm=True, scale_norm=True, returnfps=False,use_xyz=True,global_fetuers=False ,seed_choice = 'FPS'):
     """
     Input:
         npoint:
@@ -189,7 +191,13 @@ def sample_and_group(num_in_point, npoint, radius, nsample, xyz, points, bacth_s
 
 
     torch.cuda.empty_cache()
-    new_xyz = index_points(xyz, fps_idx)
+    #if sampleed
+    
+    #simp seeds if we use sampleNet seeds choice 
+    if simp_seed is not None:
+        new_xyz = simp_seed.permute(0,2,1)
+    else:
+        new_xyz = index_points(xyz, fps_idx)
     
     torch.cuda.empty_cache()
 
@@ -316,6 +324,19 @@ class PointNetSetAbstraction(nn.Module):
         self.use_xyz = use_xyz
         self.use_nchw = use_nchw
         self.seed_choice = seed_choice
+        
+        if self.seed_choice == 'Sampleseed':
+            self.sampler_seed = SampleNet(
+            num_out_points=self.npoint,
+            bottleneck_size=128,
+            group_size=7,
+            initial_temperature=1.0,
+            input_shape="bcn",
+            output_shape="bcn",
+            skip_projection=False, 
+            ) 
+           
+
         self.one_feture_vec = one_feture_vec
         self.one_mlp_feture = one_mlp_feture
         last_channel = in_channel1
@@ -375,11 +396,19 @@ class PointNetSetAbstraction(nn.Module):
         xyz = xyz.permute(0, 2, 1)
         if points is not None:
             points = points.permute(0, 2, 1)
-
+       
+        if self.seed_choice =='Sampleseed':
+            simp_seed, proj_seeds,_ = self.sampler_seed(xyz.permute(0, 2, 1))
+            sample_seeds_loss = self.sampler_seed.get_simplification_loss(xyz.permute(0, 2, 1),simp_seed,self.npoint)
+        else:
+            simp_seed = None
+            sample_seeds_loss = None
+        
+        
         if self.group_all:
             new_xyz, new_points = sample_and_group_all(xyz, points)#should update
         else:
-            new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm  = sample_and_group(self.num_in_point ,self.npoint, self.radius, self.nsample, xyz, points,self.batch_size, self.knn ,self.trans_norm, self.scale_norm, self.use_xyz ,global_fetuers =self.global_fetuers, seed_choice =self.seed_choice)
+            new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm  = sample_and_group(simp_seed, self.num_in_point ,self.npoint, self.radius, self.nsample, xyz, points,self.batch_size, self.knn ,self.trans_norm, self.scale_norm, self.use_xyz ,global_fetuers =self.global_fetuers, seed_choice =self.seed_choice)
 
         new_points = new_points.permute(0, 3, 2, 1)#new 
             #new_points = new_points.permute(0, 3, 1, 2)# [B, C+D, nsample,npoint] 
@@ -442,7 +471,7 @@ class PointNetSetAbstraction(nn.Module):
         new_points = new_points.contiguous()
 
         #new_xyz = new_xyz.permute(0, 2, 1)
-        return new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm
+        return new_xyz, new_points, idx, grouped_xyz, grouped_xyz_orig, patch_mean, patch_norm, sample_seeds_loss
 
         
         # new_points,_ = torch.max(new_points, dim= 2, keepdim= True)#

@@ -57,9 +57,9 @@ def parse_args():
     parser.add_argument("-gs", "--projection-group-size", type=int, default=7, help='Neighborhood size in Soft Projection [default: 8]')
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
     parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 40")
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=8, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=128, help="Number of sample for each patch [default: 256]")
-    parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
+    parser.add_argument('--seeds_choice', default='Sampleseed', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
     parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
@@ -250,7 +250,7 @@ def main(args):
             
             # sampler = sampler.train().cuda()
             seed_idx = []
-            projected_points,simpc, end_points_sampler = classifier.sampler(points)
+            projected_points,simpc, end_points_sampler ,sample_seeds_loss = classifier.sampler(points)
             
 
             if args.one_feture_vec or args.reduce_to_8:
@@ -275,7 +275,10 @@ def main(args):
 
             task_loss = criterion(pred, target.long(), trans_feat)
 
-            loss = task_loss + samplenet_loss
+            if args.seeds_choice == 'Sampleseed':
+                loss = task_loss + samplenet_loss + sample_seeds_loss
+            else:
+                loss = task_loss + samplenet_loss
             
             # + samplenet_loss
 

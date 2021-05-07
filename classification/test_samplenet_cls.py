@@ -122,18 +122,20 @@ def main(args):
 
 
     '''MODEL LOADING'''
-    clas_tesk_dir= 'log/pointnet_cls_0908/'
     sample_net_dir= 'log/classification/2021-01-25_22-26/'
+    task_dir= 'log/pointnet_cls_task/'
+    # classifier = pointnet_cls.get_model(40,normal_channel=args.normal).cuda()
+    # model_name = os.listdir(experiment_dir+'/logs')[0].split('.')[0]
+    model_name = os.listdir(task_dir+'/model')[0].split('.')[0]
 
     # classifier = pointnet_cls.get_model(40,normal_channel=args.normal).cuda()
-    model_name = os.listdir(clas_tesk_dir+'/logs')[0].split('.')[0]
     print(model_name)
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     criterion = MODEL.get_loss().cuda()
     
-   
-    checkpoint = torch.load(str(clas_tesk_dir) + 'checkpoints/best_model_no_normal.pth')
+   checkpoint = torch.load(str(task_dir) + 'weight/model_no_dropout.pth')
+    # checkpoint = torch.load(str(task_dir) + 'checkpoints/best_model_no_normal.pth')
     classifier.load_state_dict(checkpoint['model_state_dict'])
     classifier.requires_grad_(False)
     classifier.eval().cuda()

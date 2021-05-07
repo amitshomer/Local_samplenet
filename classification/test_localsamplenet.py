@@ -43,19 +43,19 @@ def parse_args():
     parser.add_argument('--log_dir', type=str, default='pointnet_cls_0908', help='Experiment root')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
     parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores with voting [default: 1]')
-    parser.add_argument("--modelnet", type=float, default=30 ,help="chosie data base for training [default: 40")
+    parser.add_argument("--modelnet", type=float, default=40 ,help="chosie data base for training [default: 40")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
 
     parser.add_argument("--seed_maker", type=str, default='FPS', help="FPS/samplenet")
-    parser.add_argument("-npatches", "--num-patchs", type=int, default=8, help="Number of patches [default: 4]")
-    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=128, help="Number of sample for each patch [default: 256]")
-    parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
+    parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
+    parser.add_argument('--seeds_choice', default='Sampleseed', help='FPS/Random/ Sampleseed')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
     parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
-    parser.add_argument("--one_feture_vec", type=bool, default=True, help="use one feture vector")
+    parser.add_argument("--one_feture_vec", type=bool, default=False, help="use one feture vector")
     parser.add_argument("--reduce_to_8", type=bool, default=False, help="reduce 32 points to 8")
-    parser.add_argument("--one_mlp_feture", type=bool, default=True, help="one feture with mlp")
+    parser.add_argument("--one_mlp_feture", type=bool, default=False, help="one feture with mlp")
 
 
     return parser.parse_args()
@@ -103,7 +103,7 @@ def test(model_task,model_sampler, loader, num_class=40, vote_num=1,sample_seed=
             
                 plt.show()
 
-            projected_points, simpc , end_points_sampler = classifier.sampler(points)
+            projected_points, simpc , end_points_sampler,_ = classifier.sampler(points)
            
             #####
             
@@ -206,7 +206,7 @@ def main(args):
 
         ### model load names###
     clas_tesk_dir= 'log/pointnet_cls_task/'
-    localsample_net_dir= 'log/LocalSamplenet/2021-04-24_19-14/'
+    localsample_net_dir= 'log/LocalSamplenet/2021-05-06_17-08/'
    
    
    
@@ -296,10 +296,7 @@ def main(args):
 
 
     with torch.no_grad():
-        if args.seed_maker =="samplenet":
-            instance_acc, class_acc,seed_idx = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=classifier1.sampler.eval())
-        else:
-            instance_acc, class_acc = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=None,one_feture_vec=args.one_feture_vec, reduce_to_8=args.reduce_to_8)
+        instance_acc, class_acc = test(classifier.eval(),sampler.eval(), testDataLoader, vote_num=args.num_votes,sample_seed=None,one_feture_vec=args.one_feture_vec, reduce_to_8=args.reduce_to_8)
 
         log_string('Test Instance Accuracy: %f, Class Accuracy: %f' % (instance_acc, class_acc))
 

@@ -11,7 +11,6 @@ from src.chamfer_distance import ChamferDistance
 
 
 
-
 class Local_samplenet(nn.Module):
     def __init__(self,num_class ,
         bottleneck_size,
@@ -83,7 +82,7 @@ class Local_samplenet(nn.Module):
             xyz = xyz[:, :3, :]
         else:
             norm = None
-        l1_xyz, l1_points, l1_indices, l1_patches, l1_patches_orig, l1_patch_mean, l1_patch_norm = self.sa1(xyz, norm)
+        l1_xyz, l1_points, l1_indices, l1_patches, l1_patches_orig, l1_patch_mean, l1_patch_norm, sample_seeds_loss = self.sa1(xyz, norm)
         
         
         if self.one_feture_vec: 
@@ -174,7 +173,7 @@ class Local_samplenet(nn.Module):
             
                 simp = None
 
-        return projected_points,simp, end_points
+        return projected_points,simp, end_points ,sample_seeds_loss
 
 
     def get_simplification_loss(self, ref_pc, samp_pc, pc_size, gamma=1, delta=0):
