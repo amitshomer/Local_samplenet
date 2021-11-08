@@ -23,7 +23,7 @@ of size P, that was fed to the task. We examined each implementation with sample
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/method.PNG)
 All MLP and Fully Connected layers are followed by ReLU and batch-normalization layer except for the output layer.
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/Airplane.mp4)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/Airplane.gif)
 
 ## Results
 LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Compared to SN, LSN generalization is better, higher by 6.8% at sample
