@@ -38,5 +38,5 @@ LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Com
 Will be completed 
 ```
 
-##Acknowledgment
+## Acknowledgment
 Will be completed 
