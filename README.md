@@ -1,6 +1,6 @@
 # LocalSampleNet
 Created by Amit Shomer and Royi Avron.\
-Project supervisors: Prof. Shai Avidan and Mr Itai lang.\
+Advisors: Prof. Shai Avidan and Mr Itai lang.\
 Tel-Aviv University.\
 
 ## Introduction
