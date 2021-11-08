@@ -1,7 +1,7 @@
 # LocalSampleNet
-Created by Amit Shomer and Royi Avron. 
-Project supervisors: Prof. Shai Avidan and Mr Itai lang.
-Tel-Aviv University
+Created by Amit Shomer and Royi Avron.\
+Project supervisors: Prof. Shai Avidan and Mr Itai lang.\
+Tel-Aviv University.\
 
 ## Introduction
 The popularity of 3D sensing devices like LiDAR and Stereo increased in the recent years. Point cloud is a set of points, produced by these
