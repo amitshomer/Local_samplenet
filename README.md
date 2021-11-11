@@ -13,7 +13,7 @@ LocalSampleNet(LSN) purpose is to extend  <a href="https://arxiv.org/pdf/1912.03
  neighborhood. By localizing the sampling network, we achieved better generalization ability for point clouds structures, compared to the global 
 sampling of SampleNet (SN). 
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/inter.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/inter.PNG)
 
 ## Method 
 An overview of our LSN architecture is described in Figure 1. First, the classifier task was pre-trained on ModelNet40 dataset and its wights were frozen. 
@@ -21,37 +21,38 @@ Afterwards LSN trained on an input size N, in our case 1024, from ModelNet10 dat
 of size P, that was fed to the task. We examined each implementation with sample ratio from 1 to 128 compared to the original input data. 
 
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/method.PNG)
-All MLP and Fully Connected layers are followed by ReLU and batch-normalization layer except for the output layer.
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/Airplane.gif)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/Airplane.gif)
 
 ## Results
 LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Compared to SN, LSN generalization is better, higher by 6.8% at sample
  ratio 32 for MD30. LSN (concat feature vector) achieves high performance for structures that it had been trained on (MD10), with the same SR the accuracy
  is 86.2%, only 3.4% lower than SN.
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/MD10.PNG)
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/MD30.PNG)
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/MD40.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD10.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD30.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40.PNG)
 
 
 ## Installation and usage
-This Code was tested under Pytorch-1.6.0, CUDA-10.2 on Ubuntu-20.04.1. You can find `requirement.txt` file in the main folder.\
+This Code was tested under Pytorch 1.6.0, CUDA 10.2 on Ubuntu 20.04.1. You can find `requirement.txt` file in the main folder.
 
 ### Data preparation
 Download sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) <a href="https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip">here (1.6GB)</a>. 
 Move the uncompressed data folder to `data/modelnet40_normal_resampled`\
 
 ### Classification Task (PointNet)
-Classification task already have been traine, and it's weights can be found in `/log/pointnet_cls_task/weight/`\
-In case you want train the task network on your on, It can be clone and train it from <a href="https://github.com/yanx27/Pointnet_Pointnet2_pytorch">Pointnet_Pointnet2_pytorch</a>.\
+Classification task already have been tranied and it's weights can be found in `/log/pointnet_cls_task/weight/`\
+In case you want train the task network on your on, It can be clone and train it from <a href="https://github.com/yanx27/Pointnet_Pointnet2_pytorch">Pointnet_Pointnet2_pytorch</a>.
 
 ### Train LocalSampleNet
-While traning LocalSampleNet task wights are frozen and piped in Fig.3. For traning LSN with MD30 at sample ratio 32 with 32 patches and 32 points per patch for exalple use:  
+While traning LocalSampleNet task weights are being freeze and piped as described in Fig.3.\
+For example, traning LSN on MD30 dataset with sample ration 32, 32 patches and 32 points per patch:  
 ```
 python train_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sper_patch 32
 ```
-Wieght wil be saved in the following format:  `log/LocalSamplenet/<YYYY-MM-DD_HH-MM>/checkpoints/sampler_cls_2609.pth `\
+Weight will be saved in this following format: \
+ `log/LocalSamplenet/<YYYY-MM-DD_HH-MM>/checkpoints/sampler_cls_2609.pth `\
 
 ### Evalute LocalSampleNet
 Make sure that all configurations are identical to the train setup, for exalple: 
@@ -64,8 +65,9 @@ python test_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sp
 In order to reproduce results graphs as above it can be evalute the model with MD10, MD30 or MD40:
 ```
 python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32
-```
-More information about the arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 can be found at our <a href="https://github.com/amitshomer/Local_samplenet/docs/blob/master/LocalSampleNet_Book_v3.pdf">Project Book</a>
+``` 
+For additional configurations where it possible to train and evalute the model,  More information about the
+Arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 are additional configurations where it possible to train and evalute the model. More information about this can be found in our <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
 
 
 ## Acknowledgment
