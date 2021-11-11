@@ -20,7 +20,7 @@ An overview of our LSN architecture is described in Figure 1. First, the classif
 Afterwards LSN trained on an input size N, in our case 1024, from ModelNet10 dataset (subset data of ModelNet40), and down sampled it to a smaller set 
 of size P, that was fed to the task. We examined each implementation with sample ratio from 1 to 128 compared to the original input data. 
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/method.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/method.PNG)
 
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/Airplane.gif)
 
@@ -39,7 +39,7 @@ This Code was tested under Pytorch 1.6.0, CUDA 10.2 on Ubuntu 20.04.1. You can f
 
 ### Data preparation
 Download sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) <a href="https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip">here (1.6GB)</a>. 
-Move the uncompressed data folder to `data/modelnet40_normal_resampled`\
+Move the uncompressed data folder to `data/modelnet40_normal_resampled` .
 
 ### Classification Task (PointNet)
 Classification task already have been tranied and it's weights can be found in `/log/pointnet_cls_task/weight/`\
@@ -55,16 +55,16 @@ Weight will be saved in this following format: \
  `log/LocalSamplenet/<YYYY-MM-DD_HH-MM>/checkpoints/sampler_cls_2609.pth `
 
 ### Evalute LocalSampleNet
-Make sure that all configurations are identical to the train setup, for exalple: 
+Make sure that all configurations are identical to the train setup. Choose the model to evalute by date and time for example: 
 
 ```
-python test_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sper_patch 32
+python test_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sper_patch 32 -weights 2021-05-11_13-53
 ```
 
 
 In order to reproduce results graphs as above it can be evalute the model with MD10, MD30 or MD40:
 ```
-python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32
+python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32 -weights 2021-05-11_13-53
 ``` 
 
 Additional configurations where you may to train and evalute the model as reflected in the code arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 (default not in use) can be found in our <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
