@@ -50,8 +50,8 @@ Move the uncompressed data folder to `data/modelnet40_normal_resampled` .
 
 ### Classification Task (PointNet)
 Classification task already have been tranied and the weights can be found in `/log/pointnet_cls_task/weight/`\
-   * [model_no_dropout- No dropout augmentation on the classification task (default)  ]
-   * [best_model_no_normal- Inldude dropout augmentation, no use in surface normal data ]
+   * model_no_dropout- No dropout augmentation on the classification task (default)  
+   * best_model_no_normal- Inldude dropout augmentation, no use in surface normal data 
 In case you want train the task network on your on, It can be clone and train it from <a href="https://github.com/yanx27/Pointnet_Pointnet2_pytorch">Pointnet_Pointnet2_pytorch</a>.
 
 ### Train LocalSampleNet
