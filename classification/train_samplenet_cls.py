@@ -50,7 +50,7 @@ def parse_args():
     parser.add_argument("--delta", type=float, default=0, help="Lb linear regularization loss weight [default: 0]")
     parser.add_argument("-gs", "--projection-group-size", type=int, default=7, help='Neighborhood size in Soft Projection [default: 8]')
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
-    parser.add_argument("--modelnet", type=float, default=10, help="chosie data base for training [default: 40")
+    parser.add_argument("--modelnet", type=float, default=40, help="chosie data base for training [default: 40")
 
     return parser.parse_args()
 
