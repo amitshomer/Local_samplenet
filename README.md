@@ -2,6 +2,7 @@
 Created by Amit Shomer and Royi Avron.\
 Advisors: Prof. Shai Avidan and Mr Itai Lang.\
 Electrical Engineerig Faculty, Tel-Aviv University.
+ <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
 
 ## Introduction
 The popularity of 3D sensing devices like LiDAR and Stereo increased in the recent years. Point cloud is a set of points, produced by these
@@ -41,15 +42,15 @@ A huge performance increase can be achieved with simple augmentation on the inpu
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD30_dropout.PNG)
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40_dropout.PNG)
 
-## Installation and usage
-This Code was tested under Pytorch 1.6.0, CUDA 10.2 on Ubuntu 20.04.1. You can find `requirement.txt` file in the main folder.
+## Installation and Usage
+This Code was tested under Pytorch 1.6.0, CUDA 10.2 on Ubuntu 20.04.1. There is a `classification/requirement.txt` file.
 
 ### Data preparation
 Download sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) <a href="https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip">here (1.6GB)</a>. 
 Move the uncompressed data folder to `data/modelnet40_normal_resampled` .
 
 ### Classification Task (PointNet)
-Classification task already have been tranied and the weights can be found in `/log/pointnet_cls_task/weight/`
+Pre-trained classification task can be found in `/log/pointnet_cls_task/weight/`
    * model_no_dropout- No dropout augmentation on the classification task (default).
    * best_model_no_normal- Inldude dropout augmentation, no use in surface normal data. \
 
@@ -77,8 +78,6 @@ In order to reproduce results graphs as above and evalute the model with MD10, M
 ```
 python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32 -weights 2021-05-11_13-53
 ``` 
-
-Additional configurations where you may to train and evalute the model as reflected in the code arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 (default not in use) can be found in our <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
 
 
 ## Acknowledgment
