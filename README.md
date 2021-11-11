@@ -29,7 +29,7 @@ LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Com
  ratio 32 for MD30. LSN (concat feature vector) achieves high performance for structures that it had been trained on (MD10), with the same SR the accuracy
  is 86.2%, only 3.4% lower than SN.
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD10.PNG = 468x278)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD10.PNG)
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD30.PNG)
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40.PNG)
 
