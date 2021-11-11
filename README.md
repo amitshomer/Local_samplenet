@@ -34,7 +34,7 @@ LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Com
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40.PNG)
 
 
-![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/dropout_eva_all.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD10_dropout.PNG)
 
 
 ## Installation and usage
