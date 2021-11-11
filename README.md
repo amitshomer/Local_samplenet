@@ -33,10 +33,40 @@ LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Com
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/MD10.PNG)
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/MD30.PNG)
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/MD40.PNG)
+
+
 ## Installation and usage
+This Code was tested under Pytorch-1.6.0, CUDA-10.2 on Ubuntu-20.04.1. You can find `requirement.txt` file in the main folder.\
+
+### Data preparation
+Download sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k points per shape) <a href="https://shapenet.cs.stanford.edu/media/modelnet40_normal_resampled.zip">here (1.6GB)</a>. 
+Move the uncompressed data folder to `data/modelnet40_normal_resampled`\
+
+### Classification Task (PointNet)
+Classification task already have been traine, and it's weights can be found in `/log/pointnet_cls_task/weight/`\
+In case you want train the task network on your on, It can be clone and train it from <a href="https://github.com/yanx27/Pointnet_Pointnet2_pytorch">Pointnet_Pointnet2_pytorch</a>.\
+
+### Train LocalSampleNet
+While traning LocalSampleNet task wights are frozen and piped in Fig.3. For traning LSN with MD30 at sample ratio 32 with 32 patches and 32 points per patch for exalple use:  
 ```
-Will be completed 
+python train_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sper_patch 32
+```
+Wieght wil be saved in the following format:  `log/LocalSamplenet/<YYYY-MM-DD_HH-MM>/checkpoints/sampler_cls_2609.pth `\
+
+### Evalute LocalSampleNet
+Make sure that all configurations are identical to the train setup, for exalple: 
+
+```
+python test_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sper_patch 32
 ```
 
+
+In order to reproduce results graphs as above it can be evalute the model with MD10, MD30 or MD40:
+```
+python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32
+```
+More information about the arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 can be found at our <a href="https://github.com/amitshomer/Local_samplenet/docs/blob/master/LocalSampleNet_Book_v3.pdf">Project Book</a>
+
+
 ## Acknowledgment
-Will be completed 
+This code builds upon the code provided in <a href="https://github.com/yanx27/Pointnet_Pointnet2_pytorch">Pointnet_Pointnet2_pytorch</a>, <a href="https://github.com/itailang/SampleNet/tree/master/registration">SampleNet</a> and <a href="https://github.com/unlimblue/KNN_CUDA">KNN_CUDA</a>. We thank the authors for sharing their code.
