@@ -49,7 +49,7 @@ Download sampled point clouds of ModelNet40 (XYZ and normal from mesh, 10k point
 Move the uncompressed data folder to `data/modelnet40_normal_resampled` .
 
 ### Classification Task (PointNet)
-Classification task already have been tranied and the weights can be found in `/log/pointnet_cls_task/weight/`\
+Classification task already have been tranied and the weights can be found in `/log/pointnet_cls_task/weight/`
    * model_no_dropout- No dropout augmentation on the classification task (default).
    * best_model_no_normal- Inldude dropout augmentation, no use in surface normal data. \
 
