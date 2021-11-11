@@ -1,7 +1,7 @@
 # LocalSampleNet
 Created by Amit Shomer and Royi Avron.\
 Advisors: Prof. Shai Avidan and Mr Itai Lang.\
-Electrical Engineerig Faculty, Tel-Aviv University.
+Electrical Engineerig Faculty, Tel-Aviv University.\
  <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
 
 ## Introduction
