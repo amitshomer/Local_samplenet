@@ -62,7 +62,7 @@ python test_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sp
 ```
 
 
-In order to reproduce results graphs as above it can be evalute the model with MD10, MD30 or MD40:
+In order to reproduce results graphs as above and evalute the model with MD10, MD30 or MD40 use:
 ```
 python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32 -weights 2021-05-11_13-53
 ``` 
