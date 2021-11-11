@@ -36,26 +36,27 @@ sys.path.append(os.path.join(ROOT_DIR, 'models'))
 def parse_args():
     '''PARAMETERS'''
     parser = argparse.ArgumentParser('PointNet')
-    parser.add_argument('--batch_size', type=int, default=4, help='batch size in training')
+    parser.add_argument('--batch_size', type=int, default=1, help='batch size in training')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device')
     parser.add_argument('--num_point', type=int, default=1024, help='Point Number [default: 1024]')
     parser.add_argument('--num_out_points', type=int, default=32, help='out Point Number [default: 32]')
     parser.add_argument('--log_dir', type=str, default='pointnet_cls_0908', help='Experiment root')
     parser.add_argument('--normal', action='store_true', default=False, help='Whether to use normal information [default: False]')
     parser.add_argument('--num_votes', type=int, default=1, help='Aggregate classification scores with voting [default: 1]')
-    parser.add_argument("--modelnet", type=float, default=40 ,help="chosie data base for training [default: 40")
+    parser.add_argument("--modelnet", type=float, default=10 ,help="chosie data base for training [default: 10")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
 
     parser.add_argument("--seed_maker", type=str, default='FPS', help="FPS/samplenet")
     parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
     parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
-    parser.add_argument('--seeds_choice', default='Sampleseed', help='FPS/Random/ Sampleseed')
+    parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
     parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
     parser.add_argument("--one_feture_vec", type=bool, default=False, help="use one feture vector")
     parser.add_argument("--reduce_to_8", type=bool, default=False, help="reduce 32 points to 8")
     parser.add_argument("--one_mlp_feture", type=bool, default=False, help="one feture with mlp")
+    parser.add_argument("--weights", type=bool, defaut='YYYY-MM-DD_HH-MM', help="enter train weights ad desire for example: 2021-05-11_13-53 ")
 
 
     return parser.parse_args()
@@ -189,25 +190,24 @@ def main(args):
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     path_ev='/home/amit/Documents/sampleNet_stand_alone/SampleNet/registration/log/pointnet_cls_0908'
-    file_handler = logging.FileHandler('%s/eval.txt' %  path_ev)
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    log_string('PARAMETER ...')
-    log_string(args)
+ #   file_handler = logging.FileHandler('%s/eval.txt' %  path_ev)
+ #   file_handler.setLevel(logging.INFO)
+  #  file_handler.setFormatter(formatter)
+ #   logger.addHandler(file_handler)
+#    log_string('PARAMETER ...')
+    #log_string(args)
     
     '''DATA LOADING'''
     log_string('Load dataset ...')
     DATA_PATH = 'data/modelnet40_normal_resampled/'
-    
+     
     TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=args.num_point, modelnet=args.modelnet,  split='test',
                                                     normal_channel=args.normal)
     testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=args.batch_size, shuffle=False, num_workers=4,drop_last=False)
 
         ### model load names###
     clas_tesk_dir= 'log/pointnet_cls_task/'
-    localsample_net_dir= 'log/LocalSamplenet/2021-05-06_17-08/'
-   
+    localsample_net_dir= 'log/LocalSamplenet/{0}/'.format(args.weights)
    
    
     #sample net for seeds

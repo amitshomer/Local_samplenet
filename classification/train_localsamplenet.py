@@ -51,15 +51,15 @@ def parse_args():
     parser.add_argument("-in", "--num-in-points", type=int, default= 1024, help="Number of input Points [default: 1024]")
     parser.add_argument("-out", "--num-out-points", type=int, default= 32, help="Number of output points [2, 1024] [default: 64]")
     parser.add_argument("--bottleneck-size", type=int, default=128, help="bottleneck size [default: 128]")
-    parser.add_argument("--alpha", type=float, default=30, help="Simplification regularization loss weight [default: 0.01]")
+    parser.add_argument("--alpha", type=float, default=0, help="Simplification regularization loss weight [default: 0.01]")
     parser.add_argument("--gamma", type=float, default=1, help="Lb constant regularization loss weight [default: 1]")
     parser.add_argument("--delta", type=float, default=0, help="Lb linear regularization loss weight [default: 0]")
     parser.add_argument("-gs", "--projection-group-size", type=int, default=7, help='Neighborhood size in Soft Projection [default: 8]')
     parser.add_argument("--lmbda", type=float, default=1, help="Projection regularization loss weight [default: 0.01]")
-    parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 40")
+    parser.add_argument("--modelnet", type=int, default=10, help="chosie data base for training [default: 10")
     parser.add_argument("-npatches", "--num-patchs", type=int, default=4, help="Number of patches [default: 4]")
     parser.add_argument("-n_sper_patch", "--nsample-per-patch", type=int, default=256, help="Number of sample for each patch [default: 256]")
-    parser.add_argument('--seeds_choice', default='Sampleseed', help='FPS/Random/ Sampleseed- TBD')
+    parser.add_argument('--seeds_choice', default='FPS', help='FPS/Random/ Sampleseed- TBD')
     parser.add_argument("--trans_norm", type=bool, default=True, help="shift to center each patch")
     parser.add_argument("--scale_norm", type=bool, default=True, help="normelized scale of each patch")
     parser.add_argument("--concat_global_fetures", type=bool, default=False, help="concat global seeds to each patch")
@@ -153,6 +153,7 @@ def main(args):
 
 
     model_name = os.listdir(task_dir+'/model')[0].split('.')[0]
+    print(model_name)
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(40,normal_channel=args.normal).cuda()
     # criterion = MODEL.get_loss().cuda()

@@ -42,7 +42,7 @@ class ModelNetDataLoader(Dataset):
         self.npoints = npoint
         self.modelnet= modelnet 
         self.uniform = uniform
-        self.catfile = os.path.join(self.root, 'modelnet40_shape_names.txt')
+        self.catfile = os.path.join(self.root, '../modelnet40_shape_names.txt')
        
 
         self.cat = [line.rstrip() for line in open(self.catfile)]
@@ -51,13 +51,13 @@ class ModelNetDataLoader(Dataset):
 
         shape_ids = {}
         if self.modelnet == 40:
-            shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_train.txt'))]
-            shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet40_test.txt'))]
+            shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, '../modelnet40_train.txt'))]
+            shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, '../modelnet40_test.txt'))]
         elif self.modelnet == 30: 
-            shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet30else_test.txt'))]
+            shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, '../modelnet30else_test.txt'))]
         else: 
-            shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet10_train.txt'))]
-            shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, 'modelnet10_test.txt'))]
+            shape_ids['train'] = [line.rstrip() for line in open(os.path.join(self.root, '../modelnet10_train.txt'))]
+            shape_ids['test'] = [line.rstrip() for line in open(os.path.join(self.root, '../modelnet10_test.txt'))]
 
         assert (split == 'train' or split == 'test')
         shape_names = ['_'.join(x.split('_')[0:-1]) for x in shape_ids[split]]
