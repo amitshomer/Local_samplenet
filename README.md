@@ -52,7 +52,7 @@ For example, traning LSN on MD30 dataset with sample ration 32, 32 patches and 3
 python train_localsamplenet.py -modelnet 10 -num_out_points 32 -npatches 32 -n_sper_patch 32
 ```
 Weight will be saved in this following format: \
- `log/LocalSamplenet/<YYYY-MM-DD_HH-MM>/checkpoints/sampler_cls_2609.pth `\
+ `log/LocalSamplenet/<YYYY-MM-DD_HH-MM>/checkpoints/sampler_cls_2609.pth `
 
 ### Evalute LocalSampleNet
 Make sure that all configurations are identical to the train setup, for exalple: 
@@ -66,8 +66,8 @@ In order to reproduce results graphs as above it can be evalute the model with M
 ```
 python test_localsamplenet.py -modelnet 30 -num_out_points 32 -npatches 32 -n_sper_patch 32
 ``` 
-For additional configurations where it possible to train and evalute the model,  More information about the
-Arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 are additional configurations where it possible to train and evalute the model. More information about this can be found in our <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
+
+Additional configurations where you may to train and evalute the model as reflected in the code arguments as: one_feture_vec, one_mlp_feture and reduce_to_8 (default not in use) can be found in our <a href="https://github.com/amitshomer/Local_samplenet/blob/master/docs/LocalSampleNet_Book_v3.pdf">Project Book</a>
 
 
 ## Acknowledgment
