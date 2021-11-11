@@ -34,6 +34,9 @@ LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Com
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40.PNG)
 
 
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/dropout_eva_all.PNG)
+
+
 ## Installation and usage
 This Code was tested under Pytorch 1.6.0, CUDA 10.2 on Ubuntu 20.04.1. You can find `requirement.txt` file in the main folder.
 
