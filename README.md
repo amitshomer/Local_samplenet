@@ -25,6 +25,7 @@ of size P, that was fed to the task. We examined each implementation with sample
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/Airplane.gif)
 
 ## Results
+### Sample Method Comparison
 LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Compared to SN, LSN generalization is better, higher by 6.8% at sample
  ratio 32 for MD30. LSN (concat feature vector) achieves high performance for structures that it had been trained on (MD10), with the same SR the accuracy
  is 86.2%, only 3.4% lower than SN.
@@ -33,9 +34,12 @@ LSN was evaluated on the disjoint sets MD10, MD30 which are subsets of MD40. Com
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD30.PNG)
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40.PNG)
 
+### Dropout Augmentation for Classification Task
+A huge performance increase can be achieved with simple augmentation on the input data. Randomly reduced each point cloud by 0% tyo 87% while training the task classifier is enhance the accuracy for all sampling methods. 
 
 ![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD10_dropout.PNG)
-
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD30_dropout.PNG)
+![teaser](https://github.com/amitshomer/Local_samplenet/blob/master/docs/MD40_dropout.PNG)
 
 ## Installation and usage
 This Code was tested under Pytorch 1.6.0, CUDA 10.2 on Ubuntu 20.04.1. You can find `requirement.txt` file in the main folder.
